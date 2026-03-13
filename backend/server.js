@@ -7,6 +7,7 @@ const sqlite3 = require('sqlite3').verbose();
 const userRoutes = require('./routes/userRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Load env vars
 dotenv.config();
@@ -172,6 +173,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Enhanced error handling middleware
 app.use((err, req, res, next) => {
