@@ -88,9 +88,13 @@ function createTables() {
         )`);
 
         // Add role column if it doesn't exist (migration for existing databases)
-        db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
-            if (err && !err.message.includes('duplicate column')) {
-                console.error('Error adding role column:', err);
+        db.all("PRAGMA table_info(users)", (err, columns) => {
+            if (err) return console.error('Error checking users table:', err);
+            const hasRole = columns.some(col => col.name === 'role');
+            if (!hasRole) {
+                db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
+                    if (err) console.error('Error adding role column:', err);
+                });
             }
         });
 
@@ -113,9 +117,13 @@ function createTables() {
         )`);
 
         // Add view_count column if it doesn't exist (migration for existing databases)
-        db.run(`ALTER TABLE listings ADD COLUMN view_count INTEGER DEFAULT 0`, (err) => {
-            if (err && !err.message.includes('duplicate column')) {
-                console.error('Error adding view_count column:', err);
+        db.all("PRAGMA table_info(listings)", (err, columns) => {
+            if (err) return console.error('Error checking listings table:', err);
+            const hasViewCount = columns.some(col => col.name === 'view_count');
+            if (!hasViewCount) {
+                db.run(`ALTER TABLE listings ADD COLUMN view_count INTEGER DEFAULT 0`, (err) => {
+                    if (err) console.error('Error adding view_count column:', err);
+                });
             }
         });
 

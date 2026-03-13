@@ -57,40 +57,48 @@ const RoommateSearch = () => {
     });
 
     useEffect(() => {
-        fetchProfile();
-    }, []);
-
-    const fetchProfile = async () => {
-        try {
-            const response = await axiosInstance.get('/roommates/profile');
-            if (response.data) {
-                setProfile(response.data);
-                setFormData({
-                    budget_min: response.data.budget_min || '',
-                    budget_max: response.data.budget_max || '',
-                    preferred_location: response.data.preferred_location || '',
-                    room_type: response.data.room_type || 'private',
-                    move_in_date: response.data.move_in_date || '',
-                    lifestyle: response.data.lifestyle || 'moderate',
-                    cleanliness: response.data.cleanliness || 'clean',
-                    sleep_schedule: response.data.sleep_schedule || 'normal',
-                    smoking: response.data.smoking || 'no',
-                    pets: response.data.pets || 'no',
-                    occupation: response.data.occupation || '',
-                    age: response.data.age || '',
-                    gender: response.data.gender || '',
-                    bio: response.data.bio || ''
-                });
-                // If profile exists, also fetch matches
-                fetchMatches();
-                fetchAllProfiles();
+        const loadProfile = async () => {
+            try {
+                const response = await axiosInstance.get('/roommates/profile');
+                if (response.data) {
+                    setProfile(response.data);
+                    setFormData({
+                        budget_min: response.data.budget_min || '',
+                        budget_max: response.data.budget_max || '',
+                        preferred_location: response.data.preferred_location || '',
+                        room_type: response.data.room_type || 'private',
+                        move_in_date: response.data.move_in_date || '',
+                        lifestyle: response.data.lifestyle || 'moderate',
+                        cleanliness: response.data.cleanliness || 'clean',
+                        sleep_schedule: response.data.sleep_schedule || 'normal',
+                        smoking: response.data.smoking || 'no',
+                        pets: response.data.pets || 'no',
+                        occupation: response.data.occupation || '',
+                        age: response.data.age || '',
+                        gender: response.data.gender || '',
+                        bio: response.data.bio || ''
+                    });
+                    // If profile exists, also fetch matches and all profiles
+                    try {
+                        const [matchesRes, profilesRes] = await Promise.all([
+                            axiosInstance.get('/roommates/matches'),
+                            axiosInstance.get('/roommates/browse')
+                        ]);
+                        setMatches(matchesRes.data);
+                        setAllProfiles(profilesRes.data);
+                    } catch (err) {
+                        console.error('Error fetching matches/profiles:', err);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching profile:', error);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
+
+        loadProfile();
+    }, []);
 
     const fetchMatches = async () => {
         try {
@@ -391,7 +399,7 @@ const RoommateSearch = () => {
                     </Typography>
                     {matches.length > 0 ? (
                         <Grid container spacing={2}>
-                            {matches.map((match, index) => (
+                            {matches.map((match) => (
                                 <Grid item xs={12} sm={6} md={4} key={match.id}>
                                     <Card elevation={3}>
                                         <CardContent>

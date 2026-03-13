@@ -7,7 +7,11 @@ const listingController = {
     getListing(req, res) {
         try {
             // Increment view count
-            db.run('UPDATE listings SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ? AND status = ?', [req.params.id, 'active']);
+            db.run('UPDATE listings SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ? AND status = ?', [req.params.id, 'active'], (err) => {
+                if (err) {
+                    console.error('Error incrementing view count:', err);
+                }
+            });
 
             const sql = `
                 SELECT l.*, u.name as owner_name, u.email as owner_email,
