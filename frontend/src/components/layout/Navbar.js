@@ -10,12 +10,13 @@ import {
     MenuItem,
     Avatar
 } from '@mui/material';
-import { Home, Search, Person, Logout, Add } from '@mui/icons-material';
+import { Home, Search, Person, Logout, Add, Login as LoginIcon } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 
 const Navbar = () => {
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = React.useState(null);
+    const isAuthenticated = Boolean(localStorage.getItem('token'));
 
     const handleMenu = (event) => {
         setAnchorEl(event.currentTarget);
@@ -67,37 +68,60 @@ const Navbar = () => {
                         Search
                     </Button>
 
-                    <Button
-                        color="inherit"
-                        variant="outlined"
-                        startIcon={<Add />}
-                        component={Link}
-                        to="/listings/new"
-                    >
-                        Post Room (₹10)
-                    </Button>
+                    {isAuthenticated ? (
+                        <>
+                            <Button
+                                color="inherit"
+                                variant="outlined"
+                                startIcon={<Add />}
+                                component={Link}
+                                to="/listings/new"
+                            >
+                                Post Room (₹10)
+                            </Button>
 
-                    {/* Profile Menu */}
-                    <IconButton
-                        size="large"
-                        onClick={handleMenu}
-                        color="inherit"
-                    >
-                        <Avatar sx={{ width: 32, height: 32 }} />
-                    </IconButton>
-                    <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
-                        onClose={handleClose}
-                        onClick={handleClose}
-                    >
-                        <MenuItem component={Link} to="/profile">
-                            <Person sx={{ mr: 1 }} /> Profile
-                        </MenuItem>
-                        <MenuItem onClick={handleLogout}>
-                            <Logout sx={{ mr: 1 }} /> Logout
-                        </MenuItem>
-                    </Menu>
+                            {/* Profile Menu */}
+                            <IconButton
+                                size="large"
+                                onClick={handleMenu}
+                                color="inherit"
+                            >
+                                <Avatar sx={{ width: 32, height: 32 }} />
+                            </IconButton>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl)}
+                                onClose={handleClose}
+                                onClick={handleClose}
+                            >
+                                <MenuItem component={Link} to="/profile">
+                                    <Person sx={{ mr: 1 }} /> Profile
+                                </MenuItem>
+                                <MenuItem onClick={handleLogout}>
+                                    <Logout sx={{ mr: 1 }} /> Logout
+                                </MenuItem>
+                            </Menu>
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                color="inherit"
+                                startIcon={<LoginIcon />}
+                                component={Link}
+                                to="/login"
+                            >
+                                Login
+                            </Button>
+                            <Button
+                                color="inherit"
+                                variant="outlined"
+                                component={Link}
+                                to="/register"
+                            >
+                                Sign Up
+                            </Button>
+                        </>
+                    )}
                 </Box>
             </Toolbar>
         </AppBar>

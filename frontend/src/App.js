@@ -14,6 +14,7 @@ import Search from './pages/search/Search';
 import ListingDetails from './pages/listings/ListingDetails';
 import UserProfile from './pages/profile/UserProfile';
 import AuthLayout from './components/layout/AuthLayout';
+import PublicLayout from './components/layout/PublicLayout';
 
 // Create theme
 const theme = createTheme({
@@ -94,58 +95,54 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const isAuthenticated = localStorage.getItem('token');
-
   return (
     <ErrorBoundary>
       <ThemeProvider theme={theme}>
         <Router>
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              {/* Public routes */}
+              {/* Root redirect - always go to home */}
               <Route
                 path="/"
-                element={isAuthenticated ? <Navigate to="/home" /> : <Navigate to="/login" />}
-              />
-              <Route
-                path="/login"
-                element={isAuthenticated ? <Navigate to="/home" /> : <Login />}
-              />
-              <Route
-                path="/register"
-                element={isAuthenticated ? <Navigate to="/home" /> : <Register />}
+                element={<Navigate to="/home" replace />}
               />
 
-              {/* Protected routes */}
+              {/* Auth routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              {/* Public routes - viewable without login */}
               <Route
                 path="/home"
                 element={
-                  <ProtectedRoute>
+                  <PublicLayout>
                     <Home />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/listings/new"
-                element={
-                  <ProtectedRoute>
-                    <NewListing />
-                  </ProtectedRoute>
+                  </PublicLayout>
                 }
               />
               <Route
                 path="/search"
                 element={
-                  <ProtectedRoute>
+                  <PublicLayout>
                     <Search />
-                  </ProtectedRoute>
+                  </PublicLayout>
                 }
               />
               <Route
                 path="/listings/:id"
                 element={
-                  <ProtectedRoute>
+                  <PublicLayout>
                     <ListingDetails />
+                  </PublicLayout>
+                }
+              />
+
+              {/* Protected routes - require login */}
+              <Route
+                path="/listings/new"
+                element={
+                  <ProtectedRoute>
+                    <NewListing />
                   </ProtectedRoute>
                 }
               />
