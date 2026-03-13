@@ -69,7 +69,7 @@ const AdminLogin = () => {
                     Admin Panel
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    LAVSA HIVE Administration
+                    LAVASA HIVE Administration
                 </Typography>
 
                 {error && (
