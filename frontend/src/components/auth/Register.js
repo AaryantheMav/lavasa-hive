@@ -7,10 +7,13 @@ import {
     Typography,
     Container,
     Paper,
-    Alert
+    Alert,
+    Divider
 } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import axiosInstance from '../../utils/axiosInstance';
+
 const Register = () => {
     const [formData, setFormData] = useState({
         username: '',
@@ -29,24 +32,41 @@ const Register = () => {
         });
     };
 
-    // In Register.js
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
 
-    try {
-        console.log('Attempting registration:', formData);
-        const response = await axiosInstance.post('/users/register', formData);
-        console.log('Registration response:', response);
-        localStorage.setItem('token', response.data.token);
-        navigate('/home');
-    } catch (err) {
-        console.error('Registration error:', err);
-        console.error('Error response:', err.response);
-        const errorMessage = err.response?.data?.message || err.message || 'An error occurred during registration';
-        setError(errorMessage);
-    }
-};
+        try {
+            console.log('Attempting registration:', formData);
+            const response = await axiosInstance.post('/users/register', formData);
+            console.log('Registration response:', response);
+            localStorage.setItem('token', response.data.token);
+            navigate('/home');
+        } catch (err) {
+            console.error('Registration error:', err);
+            console.error('Error response:', err.response);
+            const errorMessage = err.response?.data?.message || err.message || 'An error occurred during registration';
+            setError(errorMessage);
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setError('');
+        try {
+            const response = await axiosInstance.post('/users/google-auth', {
+                credential: credentialResponse.credential
+            });
+            localStorage.setItem('token', response.data.token);
+            navigate('/home');
+        } catch (err) {
+            console.error('Google signup error:', err);
+            setError(err.response?.data?.message || 'An error occurred during Google signup');
+        }
+    };
+
+    const handleGoogleError = () => {
+        setError('Google signup failed. Please try again.');
+    };
 
     return (
         <Container component="main" maxWidth="xs">
@@ -61,7 +81,20 @@ const handleSubmit = async (e) => {
                     </Alert>
                 )}
 
-                <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
+                <Box sx={{ mt: 2, mb: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        theme="outline"
+                        size="large"
+                        width="100%"
+                        text="signup_with"
+                    />
+                </Box>
+
+                <Divider sx={{ my: 2, width: '100%' }}>OR</Divider>
+
+                <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
                     <TextField
                         margin="normal"
                         required

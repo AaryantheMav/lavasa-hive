@@ -35,7 +35,8 @@ app.use(cors({
     origin: [
         'https://lavasa-hive-frontend-git-main-aaryans-projects-d22955a0.vercel.app',
         'https://lavasa-hive-frontend.vercel.app',
-        'http://localhost:3000'
+        'http://localhost:3000',
+        'http://localhost:3001'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // Fixed the syntax error here
@@ -82,6 +83,8 @@ function createTables() {
             phone TEXT,
             bio TEXT,
             profile_pic TEXT,
+            google_id TEXT,
+            role TEXT DEFAULT 'user',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
@@ -135,6 +138,20 @@ function createTables() {
         )`);
 
         console.log('Database tables created successfully');
+
+        // Migration: Add google_id column if not exists
+        db.run(`ALTER TABLE users ADD COLUMN google_id TEXT`, (err) => {
+            if (err && !err.message.includes('duplicate column')) {
+                console.error('Error adding google_id column:', err);
+            }
+        });
+
+        // Migration: Add role column if not exists
+        db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
+            if (err && !err.message.includes('duplicate column')) {
+                console.error('Error adding role column:', err);
+            }
+        });
     });
 }
 
