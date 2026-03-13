@@ -6,9 +6,13 @@ const db = new sqlite3.Database('./database.sqlite');
 const userController = {
     // Register user
     register: async (req, res) => {
-        const { username, password, email, name, phone } = req.body;
-        console.log('Registration attempt:', { username, email, name, phone });
+        const { username, password, email, name, phone, role } = req.body;
+        console.log('Registration attempt:', { username, email, name, phone, role });
     
+        // Validate role
+        const validRoles = ['user', 'developer'];
+        const userRole = validRoles.includes(role) ? role : 'user';
+
         try {
             db.get('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, user) => {
                 if (err) {
@@ -25,8 +29,8 @@ const userController = {
                     const hashedPassword = await bcrypt.hash(password, salt);
                     console.log('Password hashed successfully');
     
-                    const sql = 'INSERT INTO users (username, password, email, name, phone) VALUES (?, ?, ?, ?, ?)';
-                    db.run(sql, [username, hashedPassword, email, name, phone], function(err) {
+                    const sql = 'INSERT INTO users (username, password, email, name, phone, role) VALUES (?, ?, ?, ?, ?, ?)';
+                    db.run(sql, [username, hashedPassword, email, name, phone, userRole], function(err) {
                         if (err) {
                             console.error('Error inserting user:', err);
                             return res.status(500).json({ message: 'Server Error' });
@@ -41,7 +45,8 @@ const userController = {
     
                         res.status(201).json({
                             message: 'User registered successfully',
-                            token
+                            token,
+                            role: userRole
                         });
                     });
                 } catch (hashErr) {
@@ -92,7 +97,8 @@ const userController = {
                 console.log('Token created successfully');
                 res.json({
                     message: 'Logged in successfully',
-                    token
+                    token,
+                    role: user.role || 'user'
                 });
             });
         } catch (err) {
@@ -104,9 +110,8 @@ const userController = {
     // Get user profile
     getProfile: async (req, res) => {
         try {
-            const user = req.user;
-            delete user.password;
-            res.json(user);
+            const { password, ...userWithoutPassword } = req.user;
+            res.json(userWithoutPassword);
         } catch (err) {
             console.error('Get profile error:', err);
             res.status(500).json({ message: 'Server Error' });

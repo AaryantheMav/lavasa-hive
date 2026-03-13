@@ -3,9 +3,12 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./database.sqlite');
 
 const listingController = {
-    // Get a single listing with images
+    // Get a single listing with images (increments view count)
     getListing(req, res) {
         try {
+            // Increment view count
+            db.run('UPDATE listings SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ? AND status = ?', [req.params.id, 'active']);
+
             const sql = `
                 SELECT l.*, u.name as owner_name, u.email as owner_email,
                        GROUP_CONCAT(li.image_path) as image_paths,
@@ -76,6 +79,82 @@ const listingController = {
                 res.json(listings);
             });
         } catch (err) {
+            res.status(500).json({ message: 'Server Error' });
+        }
+    },
+
+    // Get trending listings (sorted by view_count)
+    getTrendingListings(req, res) {
+        try {
+            const sql = `
+                SELECT l.*, u.name as owner_name, u.email as owner_email,
+                       (SELECT image_path FROM listing_images WHERE listing_id = l.id LIMIT 1) as featured_image
+                FROM listings l
+                JOIN users u ON l.user_id = u.id
+                WHERE l.status = 'active'
+                ORDER BY l.view_count DESC
+                LIMIT 10
+            `;
+
+            db.all(sql, [], (err, listings) => {
+                if (err) {
+                    return res.status(500).json({ message: 'Error fetching trending listings' });
+                }
+                res.json(listings);
+            });
+        } catch (err) {
+            res.status(500).json({ message: 'Server Error' });
+        }
+    },
+
+    // Get developer analytics
+    getDeveloperAnalytics(req, res) {
+        try {
+            const userId = req.user.id;
+
+            // Get total listings, views, applications for this developer
+            const sql = `
+                SELECT 
+                    COUNT(l.id) as total_listings,
+                    COALESCE(SUM(l.view_count), 0) as total_views,
+                    (SELECT COUNT(*) FROM applications a 
+                     JOIN listings ll ON a.listing_id = ll.id 
+                     WHERE ll.user_id = ?) as total_applications
+                FROM listings l
+                WHERE l.user_id = ? AND l.status = 'active'
+            `;
+
+            db.get(sql, [userId, userId], (err, stats) => {
+                if (err) {
+                    console.error('Error fetching analytics:', err);
+                    return res.status(500).json({ message: 'Error fetching analytics' });
+                }
+
+                // Get per-listing analytics
+                const listingSql = `
+                    SELECT l.id, l.location, l.rent_amount, l.room_type, 
+                           l.view_count, l.created_at,
+                           (SELECT COUNT(*) FROM applications a WHERE a.listing_id = l.id) as application_count,
+                           (SELECT image_path FROM listing_images WHERE listing_id = l.id LIMIT 1) as featured_image
+                    FROM listings l
+                    WHERE l.user_id = ? AND l.status = 'active'
+                    ORDER BY l.view_count DESC
+                `;
+
+                db.all(listingSql, [userId], (err, listings) => {
+                    if (err) {
+                        console.error('Error fetching listing analytics:', err);
+                        return res.status(500).json({ message: 'Error fetching listing analytics' });
+                    }
+
+                    res.json({
+                        stats: stats || { total_listings: 0, total_views: 0, total_applications: 0 },
+                        listings: listings || []
+                    });
+                });
+            });
+        } catch (err) {
+            console.error('Server Error:', err);
             res.status(500).json({ message: 'Server Error' });
         }
     },
@@ -210,13 +289,17 @@ const listingController = {
                     return res.status(403).json({ message: 'Not authorized' });
                 }
 
-                // Insert image paths into database
-                const images = req.files.map(file => file.path.replace(/\\/g, '/')); // Convert Windows paths
-                const values = images.map(path => `(${req.params.id}, '${path}')`).join(',');
+                // Insert image paths using parameterized queries
+                const images = req.files.map(file => file.path.replace(/\\/g, '/'));
+                const placeholders = images.map(() => '(?, ?)').join(',');
+                const params = [];
+                images.forEach(imgPath => {
+                    params.push(req.params.id, imgPath);
+                });
                 
-                const sql = `INSERT INTO listing_images (listing_id, image_path) VALUES ${values}`;
+                const sql = `INSERT INTO listing_images (listing_id, image_path) VALUES ${placeholders}`;
                 
-                db.run(sql, [], (err) => {
+                db.run(sql, params, (err) => {
                     if (err) {
                         console.error('Database Error:', err);
                         return res.status(500).json({ message: 'Error saving image paths' });
@@ -263,9 +346,25 @@ const listingController = {
 
     // Search listings
     searchListings(req, res) {
-        const { max_rent } = req.query;
+        const { max_rent, location, room_type } = req.query;
 
         try {
+            let conditions = ['l.status = ?'];
+            let params = ['active'];
+
+            if (max_rent) {
+                conditions.push('l.rent_amount <= ?');
+                params.push(parseFloat(max_rent));
+            }
+            if (location) {
+                conditions.push('l.location LIKE ?');
+                params.push(`%${location}%`);
+            }
+            if (room_type) {
+                conditions.push('l.room_type = ?');
+                params.push(room_type);
+            }
+
             const sql = `
                 SELECT l.*, 
                        u.name as owner_name,
@@ -276,12 +375,9 @@ const listingController = {
                         LIMIT 1) as featured_image
                 FROM listings l
                 JOIN users u ON l.user_id = u.id
-                WHERE l.status = 'active'
-                ${max_rent ? 'AND l.rent_amount <= ?' : ''}
+                WHERE ${conditions.join(' AND ')}
                 ORDER BY l.created_at DESC
             `;
-
-            const params = max_rent ? [parseFloat(max_rent)] : [];
 
             db.all(sql, params, (err, listings) => {
                 if (err) {
