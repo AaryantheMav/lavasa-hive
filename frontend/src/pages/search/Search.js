@@ -7,13 +7,19 @@ import {
     Typography,
     Box,
     Paper,
-    Grid
+    Grid,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
-import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstance';
 import ListingCard from '../../components/listings/ListingCard';
 
 const Search = () => {
     const [maxRent, setMaxRent] = useState('');
+    const [location, setLocation] = useState('');
+    const [roomType, setRoomType] = useState('');
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
@@ -21,10 +27,12 @@ const Search = () => {
     const handleSearch = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('http://localhost:5000/api/listings/search', {
-                params: { max_rent: maxRent },
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const params = {};
+            if (maxRent) params.max_rent = maxRent;
+            if (location) params.location = location;
+            if (roomType) params.room_type = roomType;
+
+            const response = await axiosInstance.get('/listings/search', { params });
             setListings(response.data);
             setSearched(true);
         } catch (error) {
@@ -44,32 +52,59 @@ const Search = () => {
                 justifyContent: 'center',
                 py: 4
             }}>
-                <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 500, textAlign: 'center' }}>
+                <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 600, textAlign: 'center' }}>
                     <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-                        Find Rooms Within Your Budget
+                        Find Your Perfect Room
                     </Typography>
 
-                    <TextField
-                        fullWidth
-                        label="Maximum Rent (₹)"
-                        type="number"
-                        value={maxRent}
-                        onChange={(e) => setMaxRent(e.target.value)}
-                        sx={{ mb: 3 }}
-                        InputProps={{
-                            startAdornment: <Typography sx={{ mr: 1 }}>₹</Typography>
-                        }}
-                    />
-
-                    <Button
-                        variant="contained"
-                        fullWidth
-                        size="large"
-                        onClick={handleSearch}
-                        disabled={loading || !maxRent}
-                    >
-                        {loading ? 'Searching...' : 'Search Rooms'}
-                    </Button>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Maximum Rent (₹)"
+                                type="number"
+                                value={maxRent}
+                                onChange={(e) => setMaxRent(e.target.value)}
+                                InputProps={{
+                                    startAdornment: <Typography sx={{ mr: 1 }}>₹</Typography>
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Location"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="e.g., Lavasa"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth>
+                                <InputLabel>Room Type</InputLabel>
+                                <Select
+                                    value={roomType}
+                                    label="Room Type"
+                                    onChange={(e) => setRoomType(e.target.value)}
+                                >
+                                    <MenuItem value="">Any</MenuItem>
+                                    <MenuItem value="private">Private</MenuItem>
+                                    <MenuItem value="shared">Shared</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Button
+                                variant="contained"
+                                fullWidth
+                                size="large"
+                                onClick={handleSearch}
+                                disabled={loading || (!maxRent && !location && !roomType)}
+                            >
+                                {loading ? 'Searching...' : 'Search Rooms'}
+                            </Button>
+                        </Grid>
+                    </Grid>
                 </Paper>
             </Box>
 
@@ -77,8 +112,8 @@ const Search = () => {
                 <Box sx={{ mb: 4 }}>
                     <Typography variant="h6" gutterBottom align="center" sx={{ mb: 3 }}>
                         {listings.length > 0 
-                            ? `Found ${listings.length} rooms under ₹${maxRent}`
-                            : 'No rooms found in your budget'
+                            ? `Found ${listings.length} room(s) matching your criteria`
+                            : 'No rooms found matching your criteria'
                         }
                     </Typography>
                     <Grid container spacing={3}>

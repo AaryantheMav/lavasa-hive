@@ -20,7 +20,7 @@ import {
     DialogActions
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstance';
 
 const UserProfile = () => {
     const [user, setUser] = useState(null);
@@ -32,26 +32,26 @@ const UserProfile = () => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedListing, setSelectedListing] = useState(null);
     const navigate = useNavigate();
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const role = localStorage.getItem('role') || 'user';
 
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const headers = { Authorization: `Bearer ${token}` };
-
                 // Fetch profile
-                const profileResponse = await axios.get('http://localhost:5000/api/users/profile', { headers });
+                const profileResponse = await axiosInstance.get('/users/profile');
                 setUser(profileResponse.data);
 
                 // Fetch applications
-                const applicationsResponse = await axios.get('http://localhost:5000/api/applications/me', { headers });
+                const applicationsResponse = await axiosInstance.get('/applications/me');
                 setApplications(applicationsResponse.data);
 
-                // Fetch user's listings
-                const listingsResponse = await axios.get('http://localhost:5000/api/listings', { headers });
-                const userListings = listingsResponse.data.filter(listing => listing.user_id === profileResponse.data.id);
-                setListings(userListings);
-
+                // Fetch user's listings (only for developers)
+                if (role === 'developer') {
+                    const listingsResponse = await axiosInstance.get('/listings');
+                    const userListings = listingsResponse.data.filter(listing => listing.user_id === profileResponse.data.id);
+                    setListings(userListings);
+                }
             } catch (error) {
                 console.error('Failed to fetch user data', error);
             } finally {
@@ -60,18 +60,14 @@ const UserProfile = () => {
         };
 
         fetchUserData();
-    }, []);
+    }, [role]);
 
     const handleUpdateProfile = async () => {
         try {
-            await axios.put('http://localhost:5000/api/users/profile', user, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            await axiosInstance.put('/users/profile', user);
             setEditMode(false);
-            // Show success message
         } catch (error) {
             console.error('Profile update failed', error);
-            // Show error message
         }
     };
 
@@ -79,9 +75,7 @@ const UserProfile = () => {
         if (!selectedListing) return;
 
         try {
-            await axios.delete(`http://localhost:5000/api/listings/${selectedListing.id}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            await axiosInstance.delete(`/listings/${selectedListing.id}`);
             
             // Remove the listing from the state
             setListings(prevListings => prevListings.filter(l => l.id !== selectedListing.id));
@@ -89,7 +83,6 @@ const UserProfile = () => {
             setSelectedListing(null);
         } catch (error) {
             console.error('Failed to delete listing:', error);
-            // Show error message
         }
     };
 
@@ -131,6 +124,12 @@ const UserProfile = () => {
                         <Typography variant="body2" color="text.secondary" gutterBottom>
                             @{user.username}
                         </Typography>
+                        <Chip 
+                            label={role === 'developer' ? 'Developer' : 'User'} 
+                            color={role === 'developer' ? 'warning' : 'info'}
+                            size="small"
+                            sx={{ mb: 1 }}
+                        />
                         <Typography variant="body2">{user.email}</Typography>
                         <Typography variant="body2" gutterBottom>{user.phone}</Typography>
                     </Paper>
@@ -146,7 +145,7 @@ const UserProfile = () => {
                         >
                             <Tab label="Profile" />
                             <Tab label="My Applications" />
-                            <Tab label="My Listings" />
+                            {role === 'developer' && <Tab label="My Listings" />}
                         </Tabs>
 
                         {/* Profile Tab */}
@@ -204,6 +203,9 @@ const UserProfile = () => {
                                         </Typography>
                                         <Typography variant="body1" gutterBottom>
                                             <strong>Phone:</strong> {user.phone}
+                                        </Typography>
+                                        <Typography variant="body1" gutterBottom>
+                                            <strong>Role:</strong> {role === 'developer' ? 'Developer' : 'User'}
                                         </Typography>
                                         <Button
                                             variant="outlined"
@@ -266,8 +268,8 @@ const UserProfile = () => {
                             </Box>
                         )}
 
-                        {/* Listings Tab */}
-                        {tabValue === 2 && (
+                        {/* Listings Tab (developer only) */}
+                        {tabValue === 2 && role === 'developer' && (
                             <Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                     <Typography variant="h6">
@@ -289,7 +291,7 @@ const UserProfile = () => {
                                                         <CardMedia
                                                             component="img"
                                                             height="140"
-                                                            image={`http://localhost:5000/${listing.featured_image}`}
+                                                            image={`${API_URL}/${listing.featured_image}`}
                                                             alt={listing.location}
                                                         />
                                                     )}
@@ -302,6 +304,9 @@ const UserProfile = () => {
                                                         </Typography>
                                                         <Typography variant="body2">
                                                             Roommates Needed: {listing.roommates_needed}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            Views: {listing.view_count || 0}
                                                         </Typography>
                                                     </CardContent>
                                                     <CardActions>

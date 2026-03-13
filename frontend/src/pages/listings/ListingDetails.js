@@ -15,9 +15,9 @@ import {
     ImageList,
     ImageListItem
 } from '@mui/material';
-import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstance';
 import { useParams, useNavigate } from 'react-router-dom';
-import { LocationOn, Hotel, Group, Event } from '@mui/icons-material';
+import { LocationOn, Hotel, Group, Event, Visibility } from '@mui/icons-material';
 
 const ListingDetails = () => {
     const [listing, setListing] = useState(null);
@@ -29,26 +29,21 @@ const ListingDetails = () => {
     const [isOwner, setIsOwner] = useState(false);
     const { id } = useParams();
     const navigate = useNavigate();
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
     useEffect(() => {
         const fetchListingDetails = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/listings/${id}`, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                });
+                const response = await axiosInstance.get(`/listings/${id}`);
                 setListing(response.data);
 
                 // Check if current user is the owner
-                const userResponse = await axios.get('http://localhost:5000/api/users/profile', {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                });
+                const userResponse = await axiosInstance.get('/users/profile');
                 setIsOwner(userResponse.data.id === response.data.user_id);
 
                 // Fetch applications if user is owner
                 if (userResponse.data.id === response.data.user_id) {
-                    const applicationsResponse = await axios.get(`http://localhost:5000/api/applications/listings/${id}`, {
-                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
+                    const applicationsResponse = await axiosInstance.get(`/applications/listings/${id}`);
                     setApplications(applicationsResponse.data);
                 }
             } catch (error) {
@@ -64,9 +59,7 @@ const ListingDetails = () => {
     const handleApply = async () => {
         setApplying(true);
         try {
-            await axios.post(`http://localhost:5000/api/applications/listings/${id}`, {}, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            await axiosInstance.post(`/applications/listings/${id}`);
             setDialogOpen(true);
         } catch (error) {
             console.error('Application failed', error);
@@ -78,9 +71,7 @@ const ListingDetails = () => {
 
     const handleDelete = async () => {
         try {
-            await axios.delete(`http://localhost:5000/api/listings/${id}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            await axiosInstance.delete(`/listings/${id}`);
             navigate('/home');
         } catch (error) {
             console.error('Failed to delete listing:', error);
@@ -121,6 +112,12 @@ const ListingDetails = () => {
                                 label={`Available from ${listing.available_date}`} 
                                 variant="outlined" 
                             />
+                            <Chip 
+                                icon={<Visibility />} 
+                                label={`${listing.view_count || 0} views`} 
+                                variant="outlined"
+                                color={listing.view_count > 10 ? 'error' : 'default'}
+                            />
                         </Box>
 
                         <Typography variant="h5" color="primary" gutterBottom>
@@ -135,6 +132,14 @@ const ListingDetails = () => {
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                     {typeof listing.amenities === 'string' 
                                         ? listing.amenities.split(',').map((amenity, index) => (
+                                            <Chip 
+                                                key={index} 
+                                                label={amenity.trim()} 
+                                                size="small"
+                                            />
+                                        ))
+                                        : Array.isArray(listing.amenities)
+                                        ? listing.amenities.map((amenity, index) => (
                                             <Chip 
                                                 key={index} 
                                                 label={amenity.trim()} 
@@ -211,7 +216,7 @@ const ListingDetails = () => {
                                 {listing.images.map((image, index) => (
                                     <ImageListItem key={index}>
                                         <img
-                                            src={`http://localhost:5000/${image.image_path}`}
+                                            src={`${API_URL}/${image.image_path}`}
                                             alt={`Room view ${index + 1}`}
                                             loading="lazy"
                                             style={{ 
