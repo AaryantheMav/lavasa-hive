@@ -7,17 +7,19 @@ import {
     Typography,
     CardActions,
     Button,
-    Box
+    Box,
+    Chip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { LocationOn, Hotel, Group } from '@mui/icons-material';
+import { LocationOn, Hotel, Group, Visibility, TrendingUp } from '@mui/icons-material';
 
-const ListingCard = ({ listing }) => {
+const ListingCard = ({ listing, trending }) => {
     const navigate = useNavigate();
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     
     // Get the featured image URL or use a placeholder
     const imageUrl = listing.featured_image 
-        ? `http://localhost:5000/${listing.featured_image}`
+        ? `${API_URL}/${listing.featured_image}`
         : '/placeholder.jpg';
 
     const handleViewDetails = () => {
@@ -25,7 +27,16 @@ const ListingCard = ({ listing }) => {
     };
 
     return (
-        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+            {trending && (
+                <Chip
+                    icon={<TrendingUp />}
+                    label="Trending"
+                    color="error"
+                    size="small"
+                    sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+                />
+            )}
             <CardMedia
                 component="img"
                 height="200"
@@ -56,6 +67,13 @@ const ListingCard = ({ listing }) => {
                     <Group sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />
                     <Typography variant="body2" color="text.secondary">
                         {listing.roommates_needed} Roommate(s) needed
+                    </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Visibility sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                        {listing.view_count || 0} views
                     </Typography>
                 </Box>
 

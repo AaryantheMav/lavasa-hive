@@ -17,7 +17,7 @@ import {
     DialogTitle,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstance';
 
 const amenities = [
     'Wi-Fi', 'AC', 'TV', 'Washing Machine', 'Fridge',
@@ -67,9 +67,7 @@ const NewListing = () => {
     const handleListingSubmission = async () => {
         try {
             setLoading(true);
-            const listingResponse = await axios.post('http://localhost:5000/api/listings', formData, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const listingResponse = await axiosInstance.post('/listings', formData);
 
             if (images.length > 0) {
                 const formDataWithImages = new FormData();
@@ -78,13 +76,12 @@ const NewListing = () => {
                 });
 
                 try {
-                    await axios.post(
-                        `http://localhost:5000/api/listings/${listingResponse.data.listingId}/images`,
+                    await axiosInstance.post(
+                        `/listings/${listingResponse.data.listingId}/images`,
                         formDataWithImages,
                         {
                             headers: {
-                                'Content-Type': 'multipart/form-data',
-                                Authorization: `Bearer ${localStorage.getItem('token')}`
+                                'Content-Type': 'multipart/form-data'
                             }
                         }
                     );

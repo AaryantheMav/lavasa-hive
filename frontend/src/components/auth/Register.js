@@ -7,8 +7,11 @@ import {
     Typography,
     Container,
     Paper,
-    Alert
+    Alert,
+    ToggleButton,
+    ToggleButtonGroup
 } from '@mui/material';
+import { Person, Business } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 const Register = () => {
@@ -17,7 +20,8 @@ const Register = () => {
         password: '',
         email: '',
         name: '',
-        phone: ''
+        phone: '',
+        role: 'user'
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -29,30 +33,38 @@ const Register = () => {
         });
     };
 
-    // In Register.js
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+    const handleRoleChange = (event, newRole) => {
+        if (newRole !== null) {
+            setFormData({ ...formData, role: newRole });
+        }
+    };
 
-    try {
-        console.log('Attempting registration:', formData);
-        const response = await axiosInstance.post('/users/register', formData);
-        console.log('Registration response:', response);
-        localStorage.setItem('token', response.data.token);
-        navigate('/home');
-    } catch (err) {
-        console.error('Registration error:', err);
-        console.error('Error response:', err.response);
-        const errorMessage = err.response?.data?.message || err.message || 'An error occurred during registration';
-        setError(errorMessage);
-    }
-};
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        try {
+            const response = await axiosInstance.post('/users/register', formData);
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('role', response.data.role || formData.role);
+            
+            if (response.data.role === 'developer' || formData.role === 'developer') {
+                navigate('/dashboard');
+            } else {
+                navigate('/home');
+            }
+        } catch (err) {
+            console.error('Registration error:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'An error occurred during registration';
+            setError(errorMessage);
+        }
+    };
 
     return (
         <Container component="main" maxWidth="xs">
             <Paper elevation={3} sx={{ padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 8 }}>
                 <Typography component="h1" variant="h5">
-                    Create LAVSA HIVE Account
+                    Create LAVASA HIVE Account
                 </Typography>
 
                 {error && (
@@ -62,6 +74,30 @@ const handleSubmit = async (e) => {
                 )}
 
                 <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
+                    {/* Role Selection */}
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        I am a:
+                    </Typography>
+                    <ToggleButtonGroup
+                        value={formData.role}
+                        exclusive
+                        onChange={handleRoleChange}
+                        fullWidth
+                        sx={{ mb: 2 }}
+                    >
+                        <ToggleButton value="user">
+                            <Person sx={{ mr: 1 }} /> User
+                        </ToggleButton>
+                        <ToggleButton value="developer">
+                            <Business sx={{ mr: 1 }} /> Developer
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, textAlign: 'center' }}>
+                        {formData.role === 'developer' 
+                            ? 'Developers can list and manage properties, view analytics' 
+                            : 'Users can browse properties, apply, and find roommates'}
+                    </Typography>
+
                     <TextField
                         margin="normal"
                         required
@@ -128,7 +164,7 @@ const handleSubmit = async (e) => {
                         variant="contained"
                         sx={{ mt: 3, mb: 2 }}
                     >
-                        Sign Up
+                        Sign Up as {formData.role === 'developer' ? 'Developer' : 'User'}
                     </Button>
                     <Box sx={{ textAlign: 'center' }}>
                         <Link to="/login" style={{ textDecoration: 'none' }}>

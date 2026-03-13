@@ -13,6 +13,8 @@ import NewListing from './pages/listings/NewListing';
 import Search from './pages/search/Search';
 import ListingDetails from './pages/listings/ListingDetails';
 import UserProfile from './pages/profile/UserProfile';
+import DeveloperDashboard from './pages/developer/DeveloperDashboard';
+import RoommateSearch from './pages/roommate/RoommateSearch';
 import AuthLayout from './components/layout/AuthLayout';
 
 // Create theme
@@ -154,6 +156,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UserProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DeveloperDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roommates"
+                element={
+                  <ProtectedRoute>
+                    <RoommateSearch />
                   </ProtectedRoute>
                 }
               />

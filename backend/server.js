@@ -7,6 +7,7 @@ const sqlite3 = require('sqlite3').verbose();
 const userRoutes = require('./routes/userRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
+const roommateRoutes = require('./routes/roommateRoutes');
 
 // Load env vars
 dotenv.config();
@@ -82,8 +83,20 @@ function createTables() {
             phone TEXT,
             bio TEXT,
             profile_pic TEXT,
+            role TEXT DEFAULT 'user',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
+
+        // Add role column if it doesn't exist (migration for existing databases)
+        db.all("PRAGMA table_info(users)", (err, columns) => {
+            if (err) return console.error('Error checking users table:', err);
+            const hasRole = columns.some(col => col.name === 'role');
+            if (!hasRole) {
+                db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
+                    if (err) console.error('Error adding role column:', err);
+                });
+            }
+        });
 
         // Listings table
         db.run(`CREATE TABLE IF NOT EXISTS listings (
@@ -98,9 +111,21 @@ function createTables() {
             house_rules TEXT,
             contact_preferences TEXT,
             status TEXT DEFAULT 'active',
+            view_count INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )`);
+
+        // Add view_count column if it doesn't exist (migration for existing databases)
+        db.all("PRAGMA table_info(listings)", (err, columns) => {
+            if (err) return console.error('Error checking listings table:', err);
+            const hasViewCount = columns.some(col => col.name === 'view_count');
+            if (!hasViewCount) {
+                db.run(`ALTER TABLE listings ADD COLUMN view_count INTEGER DEFAULT 0`, (err) => {
+                    if (err) console.error('Error adding view_count column:', err);
+                });
+            }
+        });
 
         // Updated Applications table
         db.run(`CREATE TABLE IF NOT EXISTS applications (
@@ -134,6 +159,28 @@ function createTables() {
             FOREIGN KEY (user_id) REFERENCES users (id)
         )`);
 
+        // Roommate Profiles table
+        db.run(`CREATE TABLE IF NOT EXISTS roommate_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE,
+            budget_min REAL,
+            budget_max REAL,
+            preferred_location TEXT,
+            room_type TEXT,
+            move_in_date TEXT,
+            lifestyle TEXT,
+            cleanliness TEXT,
+            sleep_schedule TEXT,
+            smoking TEXT DEFAULT 'no',
+            pets TEXT DEFAULT 'no',
+            occupation TEXT,
+            age INTEGER,
+            gender TEXT,
+            bio TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )`);
+
         console.log('Database tables created successfully');
     });
 }
@@ -155,6 +202,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/roommates', roommateRoutes);
 
 // Enhanced error handling middleware
 app.use((err, req, res, next) => {

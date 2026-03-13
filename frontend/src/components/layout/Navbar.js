@@ -8,14 +8,16 @@ import {
     IconButton,
     Menu,
     MenuItem,
-    Avatar
+    Avatar,
+    Chip
 } from '@mui/material';
-import { Home, Search, Person, Logout, Add } from '@mui/icons-material';
+import { Home, Search, Person, Logout, Add, Dashboard, People } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 
 const Navbar = () => {
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = React.useState(null);
+    const role = localStorage.getItem('role') || 'user';
 
     const handleMenu = (event) => {
         setAnchorEl(event.currentTarget);
@@ -27,6 +29,7 @@ const Navbar = () => {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('role');
         navigate('/login');
     };
 
@@ -37,14 +40,23 @@ const Navbar = () => {
                 <Typography
                     variant="h6"
                     component={Link}
-                    to="/home"
+                    to={role === 'developer' ? '/dashboard' : '/home'}
                     sx={{
                         flexGrow: 1,
                         textDecoration: 'none',
-                        color: 'inherit'
+                        color: 'inherit',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
                     }}
                 >
-                    LAVSA HIVE
+                    LAVASA HIVE
+                    <Chip 
+                        label={role === 'developer' ? 'Developer' : 'User'} 
+                        size="small" 
+                        color={role === 'developer' ? 'warning' : 'info'}
+                        sx={{ ml: 1 }}
+                    />
                 </Typography>
 
                 {/* Navigation Links */}
@@ -67,15 +79,38 @@ const Navbar = () => {
                         Search
                     </Button>
 
+                    {/* Roommate Search - visible to all */}
                     <Button
                         color="inherit"
-                        variant="outlined"
-                        startIcon={<Add />}
+                        startIcon={<People />}
                         component={Link}
-                        to="/listings/new"
+                        to="/roommates"
                     >
-                        Post Room (₹10)
+                        Roommates
                     </Button>
+
+                    {/* Developer-only: Dashboard and Post Room */}
+                    {role === 'developer' && (
+                        <>
+                            <Button
+                                color="inherit"
+                                startIcon={<Dashboard />}
+                                component={Link}
+                                to="/dashboard"
+                            >
+                                Dashboard
+                            </Button>
+                            <Button
+                                color="inherit"
+                                variant="outlined"
+                                startIcon={<Add />}
+                                component={Link}
+                                to="/listings/new"
+                            >
+                                Post Room (₹10)
+                            </Button>
+                        </>
+                    )}
 
                     {/* Profile Menu */}
                     <IconButton

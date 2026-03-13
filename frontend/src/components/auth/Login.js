@@ -32,19 +32,19 @@ const Login = () => {
         setError('');
         
         try {
-            console.log('Attempting login with:', formData);
-            console.log('API URL:', process.env.REACT_APP_API_URL);
-            
             const response = await axiosInstance.post('/users/login', formData);
-            console.log('Login response:', response);
             
             localStorage.setItem('token', response.data.token);
-            navigate('/home');
+            localStorage.setItem('role', response.data.role || 'user');
+            
+            // Redirect based on role
+            if (response.data.role === 'developer') {
+                navigate('/dashboard');
+            } else {
+                navigate('/home');
+            }
         } catch (err) {
-            console.error('Full error object:', err);
-            console.error('Error response:', err.response);
-            console.error('Error status:', err.response?.status);
-            console.error('Error data:', err.response?.data);
+            console.error('Login error:', err);
             setError(err.response?.data?.message || 'An error occurred during login');
         }
     };
@@ -52,7 +52,7 @@ const Login = () => {
         <Container component="main" maxWidth="xs">
             <Paper elevation={3} sx={{ padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 8 }}>
                 <Typography component="h1" variant="h5">
-                    Sign in to LAVSA HIVE
+                    Sign in to LAVASA HIVE
                 </Typography>
 
                 {error && (
