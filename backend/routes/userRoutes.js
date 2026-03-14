@@ -12,6 +12,10 @@ router.post('/register', userController.register);
 // @desc    Login user
 router.post('/login', userController.login);
 
+// @route   POST /api/users/google-auth
+// @desc    Google OAuth authentication
+router.post('/google-auth', userController.googleAuth);
+
 // @route   GET /api/users/profile
 // @desc    Get user profile
 router.get('/profile', auth, userController.getProfile);

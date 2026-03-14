@@ -7,9 +7,11 @@ import {
     Typography,
     Container,
     Paper,
-    Alert
+    Alert,
+    Divider
 } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import axiosInstance from '../../utils/axiosInstance';
 
 const Login = () => {
@@ -48,6 +50,25 @@ const Login = () => {
             setError(err.response?.data?.message || 'An error occurred during login');
         }
     };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setError('');
+        try {
+            const response = await axiosInstance.post('/users/google-auth', {
+                credential: credentialResponse.credential
+            });
+            localStorage.setItem('token', response.data.token);
+            navigate('/home');
+        } catch (err) {
+            console.error('Google login error:', err);
+            setError(err.response?.data?.message || 'An error occurred during Google login');
+        }
+    };
+
+    const handleGoogleError = () => {
+        setError('Google login failed. Please try again.');
+    };
+
     return (
         <Container component="main" maxWidth="xs">
             <Paper elevation={3} sx={{ padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 8 }}>
@@ -94,6 +115,20 @@ const Login = () => {
                     >
                         Sign In
                     </Button>
+
+                    <Divider sx={{ my: 2 }}>OR</Divider>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            theme="outline"
+                            size="large"
+                            width="100%"
+                            text="signin_with"
+                        />
+                    </Box>
+
                     <Box sx={{ textAlign: 'center' }}>
                         <Link to="/register" style={{ textDecoration: 'none' }}>
                             <Typography variant="body2" color="primary">

@@ -20,6 +20,11 @@ frontend/build/
 frontend/dist/
 frontend/.env
 
+# Admin specific ignores
+admin/build/
+admin/dist/
+admin/.env
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
