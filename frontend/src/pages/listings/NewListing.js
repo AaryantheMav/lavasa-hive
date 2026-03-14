@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 
 const amenities = [
     'Wi-Fi', 'AC', 'TV', 'Washing Machine', 'Fridge',
@@ -26,14 +27,14 @@ const amenities = [
 
 const NewListing = () => {
     const navigate = useNavigate();
+    const { role } = useAuth();
 
     // Redirect non-developers away from this page
     useEffect(() => {
-        const role = localStorage.getItem('role');
         if (role !== 'developer') {
             navigate('/home');
         }
-    }, [navigate]);
+    }, [role, navigate]);
 
     const [images, setImages] = useState([]);
     const [showPayment, setShowPayment] = useState(false);
