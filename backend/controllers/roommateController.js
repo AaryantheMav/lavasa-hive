@@ -101,7 +101,7 @@ const roommateController = {
 
                 // Find compatible profiles based on overlapping budget and preferences
                 const sql = `
-                    SELECT rp.*, u.name, u.email, u.phone,
+                    SELECT rp.*, u.name,
                         CASE
                             WHEN rp.lifestyle = ? THEN 1 ELSE 0
                         END +
@@ -160,7 +160,7 @@ const roommateController = {
     browseProfiles(req, res) {
         try {
             const sql = `
-                SELECT rp.*, u.name, u.email
+                SELECT rp.*, u.name
                 FROM roommate_profiles rp
                 JOIN users u ON rp.user_id = u.id
                 WHERE rp.user_id != ?

@@ -5,14 +5,17 @@ const router = express.Router();
 const listingController = require('../controllers/listingController');
 const auth = require('../middleware/auth');
 
-// @route   POST /api/listings
-// @desc    Create a new listing (developers only)
-router.post('/', auth, (req, res, next) => {
-    if (req.user.role !== 'developer') {
-        return res.status(403).json({ message: 'Only developers can create listings' });
+// Reusable middleware to require a specific role
+const requireRole = (role) => (req, res, next) => {
+    if (req.user.role !== role) {
+        return res.status(403).json({ message: `Only ${role}s can access this resource` });
     }
     next();
-}, listingController.createListing);
+};
+
+// @route   POST /api/listings
+// @desc    Create a new listing (developers only)
+router.post('/', auth, requireRole('developer'), listingController.createListing);
 
 // @route   GET /api/listings
 // @desc    Get all listings
@@ -28,12 +31,7 @@ router.get('/trending', listingController.getTrendingListings);
 
 // @route   GET /api/listings/analytics
 // @desc    Get developer analytics (developers only)
-router.get('/analytics', auth, (req, res, next) => {
-    if (req.user.role !== 'developer') {
-        return res.status(403).json({ message: 'Only developers can access analytics' });
-    }
-    next();
-}, listingController.getDeveloperAnalytics);
+router.get('/analytics', auth, requireRole('developer'), listingController.getDeveloperAnalytics);
 
 // @route   GET /api/listings/:id
 // @desc    Get a single listing

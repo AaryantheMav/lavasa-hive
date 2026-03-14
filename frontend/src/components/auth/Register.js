@@ -14,6 +14,7 @@ import {
 import { Person, Business } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 const Register = () => {
     const [formData, setFormData] = useState({
         username: '',
@@ -25,6 +26,7 @@ const Register = () => {
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleChange = (e) => {
         setFormData({
@@ -45,10 +47,10 @@ const Register = () => {
 
         try {
             const response = await axiosInstance.post('/users/register', formData);
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('role', response.data.role || formData.role);
+            const userRole = response.data.role || formData.role;
+            login(response.data.user || null, response.data.token, userRole);
             
-            if (response.data.role === 'developer' || formData.role === 'developer') {
+            if (userRole === 'developer') {
                 navigate('/dashboard');
             } else {
                 navigate('/home');

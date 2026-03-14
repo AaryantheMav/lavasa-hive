@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     TextField,
@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 
 const amenities = [
     'Wi-Fi', 'AC', 'TV', 'Washing Machine', 'Fridge',
@@ -26,6 +27,15 @@ const amenities = [
 
 const NewListing = () => {
     const navigate = useNavigate();
+    const { role } = useAuth();
+
+    // Redirect non-developers away from this page
+    useEffect(() => {
+        if (role !== 'developer') {
+            navigate('/home');
+        }
+    }, [role, navigate]);
+
     const [images, setImages] = useState([]);
     const [showPayment, setShowPayment] = useState(false);
     const [countdown, setCountdown] = useState(15);

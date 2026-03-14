@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ const Login = () => {
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleChange = (e) => {
         setFormData({
@@ -34,8 +36,7 @@ const Login = () => {
         try {
             const response = await axiosInstance.post('/users/login', formData);
             
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('role', response.data.role || 'user');
+            login(response.data.user || null, response.data.token, response.data.role || 'user');
             
             // Redirect based on role
             if (response.data.role === 'developer') {
