@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     TextField,
@@ -26,6 +26,15 @@ const amenities = [
 
 const NewListing = () => {
     const navigate = useNavigate();
+
+    // Redirect non-developers away from this page
+    useEffect(() => {
+        const role = localStorage.getItem('role');
+        if (role !== 'developer') {
+            navigate('/home');
+        }
+    }, [navigate]);
+
     const [images, setImages] = useState([]);
     const [showPayment, setShowPayment] = useState(false);
     const [countdown, setCountdown] = useState(15);

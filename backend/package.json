@@ -19,10 +19,4 @@
     "devDependencies": {
         "nodemon": "^2.0.22"
     }
-    {
-        "scripts": {
-          "start": "node server.js",
-          "backup": "node scripts/backup.js"
-        }
-      }
 }
